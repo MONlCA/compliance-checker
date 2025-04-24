@@ -3,51 +3,92 @@ from PIL import Image
 import pytesseract
 import requests
 from bs4 import BeautifulSoup
+import openai
 import io
 import os
+import fitz  # PyMuPDF for PDF
+
+# Set your OpenAI API key
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Try to point pytesseract to the Tesseract executable
 if not os.path.exists(pytesseract.pytesseract.tesseract_cmd):
-    pytesseract.pytesseract.tesseract_cmd = "/usr/local/bin/tesseract"  # Default for Mac Homebrew
+    pytesseract.pytesseract.tesseract_cmd = "/usr/local/bin/tesseract"
 
-st.set_page_config(page_title="📲 A2P 10DLC & Toll-Free Compliance Assistant")
-st.title("📲 A2P 10DLC & Toll-Free Compliance Assistant")
+# --- AUTH ---
+PASSWORD = os.getenv("APP_PASSWORD")
+if PASSWORD:
+    st.title("🔒 Secure Access")
+    pwd = st.text_input("Enter app password", type="password")
+    if pwd != PASSWORD:
+        st.warning("Incorrect password")
+        st.stop()
+
+# --- APP CONFIG ---
+st.set_page_config(
+    page_title="📲 A2P Compliance Assistant",
+    page_icon="📲",
+    layout="centered"
+)
+
+# --- HEADER ---
+st.markdown("""
+<style>
+    .css-18e3th9 {
+        background-color: #0E1117;
+    }
+    .stApp {
+        background-color: #0E1117;
+        color: white;
+    }
+    .title-style {
+        font-size: 2.5em;
+        font-weight: bold;
+        text-align: center;
+        color: #00FFB3;
+        padding-bottom: 0.5em;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="title-style">📲 A2P 10DLC & Toll-Free Compliance Assistant</div>
+""", unsafe_allow_html=True)
 
 st.header("📷 Opt-In Flow Screenshot Compliance")
-uploaded_file = st.file_uploader("Upload a screenshot of the opt-in flow", type=["png", "jpg", "jpeg"])
+uploaded_file = st.file_uploader("Upload a screenshot or PDF of the opt-in flow", type=["png", "jpg", "jpeg", "pdf"])
 
 # Section for privacy policy check
 st.header("🔗 Privacy Policy Compliance Check")
 privacy_policy_url = st.text_input("Paste the privacy policy URL")
 
-# Use uploaded screenshot only
-image_source = uploaded_file
-
-if image_source:
-    st.image(image_source, caption="Uploaded Screenshot", use_container_width=True)
-    image = Image.open(image_source)
-    try:
+if uploaded_file:
+    file_type = uploaded_file.type
+    extracted_text = ""
+    if file_type == "application/pdf":
+        doc = fitz.open(stream=uploaded_file.read(), filetype="pdf")
+        for page in doc:
+            extracted_text += page.get_text()
+    else:
+        image = Image.open(uploaded_file)
         extracted_text = pytesseract.image_to_string(image)
+        st.image(image, caption="Uploaded Screenshot", use_container_width=True)
 
-        st.subheader("Extracted Text from Screenshot")
-        st.text_area("Opt-In Text Detected:", extracted_text, height=200)
+    st.subheader("Extracted Text from Uploaded File")
+    st.text_area("Opt-In Text Detected:", extracted_text, height=200)
 
-        st.subheader("Compliance Results (Screenshot)")
-        issues = []
-        if "consent" not in extracted_text.lower():
-            issues.append("❌ Missing clear consent language")
-        if "stop" not in extracted_text.lower():
-            issues.append("❌ Missing opt-out instructions (e.g., 'STOP to cancel')")
-        if "terms" not in extracted_text.lower():
-            issues.append("❌ Missing reference to Terms of Service or Privacy Policy")
-
-        if issues:
-            for issue in issues:
-                st.write(issue)
-        else:
-            st.success("✅ Screenshot appears compliant with A2P 10DLC and Toll-Free requirements.")
-    except pytesseract.pytesseract.TesseractNotFoundError:
-        st.error("Tesseract OCR not found. Please ensure it is installed and in your PATH.")
+    # GPT Analysis
+    with st.spinner("Analyzing opt-in text with GPT..."):
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are an expert in SMS and email marketing compliance, particularly for A2P 10DLC and Toll-Free verification."},
+                {"role": "user", "content": f"Please review the following opt-in flow text and identify any compliance issues for A2P 10DLC and Toll-Free requirements. Text:\n{extracted_text}"}
+            ]
+        )
+        gpt_feedback = response.choices[0].message.content
+        st.subheader("GPT Compliance Analysis (Screenshot or PDF)")
+        st.write(gpt_feedback)
 
 if privacy_policy_url:
     st.subheader("Fetched Privacy Policy Text")
@@ -57,20 +98,17 @@ if privacy_policy_url:
         text = soup.get_text()
         st.text_area("Privacy Policy Content:", text[:5000], height=200)
 
-        st.subheader("Compliance Results (Privacy Policy)")
-        pp_issues = []
-        if "data" not in text.lower():
-            pp_issues.append("❌ No mention of data collection or usage.")
-        if "consent" not in text.lower():
-            pp_issues.append("❌ No mention of user consent or opt-in/opt-out.")
-        if "third party" not in text.lower() and "share" not in text.lower():
-            pp_issues.append("❌ No mention of third-party data sharing or disclosure.")
-
-        if pp_issues:
-            for issue in pp_issues:
-                st.write(issue)
-        else:
-            st.success("✅ Privacy Policy appears to meet standard compliance indicators.")
+        with st.spinner("Analyzing privacy policy with GPT..."):
+            response = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are an expert in digital privacy compliance and must evaluate website privacy policies."},
+                    {"role": "user", "content": f"Please review the following privacy policy text and identify any compliance gaps or concerns relevant to data collection, consent, and third-party sharing:\n{text[:4000]}"}
+                ]
+            )
+            gpt_feedback = response.choices[0].message.content
+            st.subheader("GPT Compliance Analysis (Privacy Policy)")
+            st.write(gpt_feedback)
 
     except Exception as e:
         st.error(f"Failed to fetch or parse the privacy policy: {e}")
