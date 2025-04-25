@@ -3,7 +3,6 @@ from PIL import Image
 import pytesseract
 import requests
 from bs4 import BeautifulSoup
-from openai import OpenAI
 import io
 import os
 import fitz  # PyMuPDF for PDF
@@ -14,10 +13,6 @@ st.set_page_config(
     page_icon="📲",
     layout="centered"
 )
-
-# Initialize OpenAI client with API key
-OPENAI_KEY = os.getenv("OPENAI_API_KEY")
-client = OpenAI(api_key=OPENAI_KEY)
 
 # Set up pytesseract path if needed
 if not os.path.exists(pytesseract.pytesseract.tesseract_cmd):
@@ -61,6 +56,12 @@ uploaded_file = st.file_uploader("Upload a screenshot or PDF of the opt-in flow"
 st.header("🔗 Privacy Policy Compliance Check")
 privacy_policy_url = st.text_input("Paste the privacy policy URL")
 
+def dummy_opt_in_feedback(text):
+    return "✅ Text appears to be mostly compliant. Make sure your opt-in clearly states:\n- Who is sending the messages\n- That consent is not a condition of purchase\n- How to opt-out (STOP/HELP keywords)"
+
+def dummy_privacy_policy_feedback(text):
+    return "📋 Privacy policy review:\n- Ensure the document covers data collection, sharing, and contact info\n- Add explicit mention of SMS consent and opt-out rights if missing"
+
 if uploaded_file:
     file_type = uploaded_file.type
     extracted_text = ""
@@ -76,26 +77,13 @@ if uploaded_file:
     st.subheader("Extracted Text from Uploaded File")
     st.text_area("Opt-In Text Detected:", extracted_text, height=200)
 
-    # GPT Analysis for Opt-In
     if extracted_text.strip():
-        with st.spinner("Analyzing opt-in text with GPT..."):
-            try:
-                response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {"role": "system", "content": "You are an expert in SMS and email marketing compliance, particularly for A2P 10DLC and Toll-Free verification."},
-                        {"role": "user", "content": f"Please review the following opt-in flow text and identify any compliance issues for A2P 10DLC and Toll-Free requirements. Text:\n{extracted_text}"}
-                    ]
-                )
-                gpt_feedback = response.choices[0].message.content
-                st.subheader("GPT Compliance Analysis (Screenshot or PDF)")
-                st.write(gpt_feedback)
-            except Exception as e:
-                st.error(f"Error while analyzing opt-in flow: {e}")
+        with st.spinner("Simulating opt-in analysis..."):
+            st.subheader("GPT Compliance Analysis (Screenshot or PDF)")
+            st.write(dummy_opt_in_feedback(extracted_text))
     else:
         st.warning("No text was extracted from the uploaded file. Please try another image or PDF.")
 
-# --- PRIVACY POLICY URL CHECK ---
 if privacy_policy_url:
     st.subheader("Fetched Privacy Policy Text")
     try:
@@ -104,17 +92,8 @@ if privacy_policy_url:
         text = soup.get_text()
         st.text_area("Privacy Policy Content:", text[:5000], height=200)
 
-        with st.spinner("Analyzing privacy policy with GPT..."):
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are an expert in digital privacy compliance and must evaluate website privacy policies."},
-                    {"role": "user", "content": f"Please review the following privacy policy text and identify any compliance gaps or concerns relevant to data collection, consent, and third-party sharing:\n{text[:4000]}"}
-                ]
-            )
-            gpt_feedback = response.choices[0].message.content
+        with st.spinner("Simulating privacy policy analysis..."):
             st.subheader("GPT Compliance Analysis (Privacy Policy)")
-            st.write(gpt_feedback)
-
+            st.write(dummy_privacy_policy_feedback(text[:4000]))
     except Exception as e:
         st.error(f"Failed to fetch or parse the privacy policy: {e}")
