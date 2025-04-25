@@ -15,14 +15,15 @@ st.set_page_config(
     layout="centered"
 )
 
-# Set your OpenAI API key
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Initialize OpenAI client with API key
+OPENAI_KEY = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=OPENAI_KEY)
 
-# Try to point pytesseract to the Tesseract executable
+# Set up pytesseract path if needed
 if not os.path.exists(pytesseract.pytesseract.tesseract_cmd):
     pytesseract.pytesseract.tesseract_cmd = "/usr/local/bin/tesseract"
 
-# --- AUTH ---
+# --- PASSWORD PROTECTION ---
 PASSWORD = os.getenv("APP_PASSWORD")
 if PASSWORD:
     st.title("🔒 Secure Access")
@@ -31,12 +32,9 @@ if PASSWORD:
         st.warning("Incorrect password")
         st.stop()
 
-# --- HEADER ---
+# --- HEADER STYLES ---
 st.markdown("""
 <style>
-    .css-18e3th9 {
-        background-color: #0E1117;
-    }
     .stApp {
         background-color: #0E1117;
         color: white;
@@ -55,10 +53,11 @@ st.markdown("""
 <div class="title-style">📲 A2P 10DLC & Toll-Free Compliance Assistant</div>
 """, unsafe_allow_html=True)
 
+# --- OPT-IN FLOW UPLOAD ---
 st.header("📷 Opt-In Flow Screenshot Compliance")
 uploaded_file = st.file_uploader("Upload a screenshot or PDF of the opt-in flow", type=["png", "jpg", "jpeg", "pdf"])
 
-# Section for privacy policy check
+# --- PRIVACY POLICY ---
 st.header("🔗 Privacy Policy Compliance Check")
 privacy_policy_url = st.text_input("Paste the privacy policy URL")
 
@@ -77,7 +76,7 @@ if uploaded_file:
     st.subheader("Extracted Text from Uploaded File")
     st.text_area("Opt-In Text Detected:", extracted_text, height=200)
 
-    # GPT Analysis
+    # GPT Analysis for Opt-In
     if extracted_text.strip():
         with st.spinner("Analyzing opt-in text with GPT..."):
             try:
@@ -96,6 +95,7 @@ if uploaded_file:
     else:
         st.warning("No text was extracted from the uploaded file. Please try another image or PDF.")
 
+# --- PRIVACY POLICY URL CHECK ---
 if privacy_policy_url:
     st.subheader("Fetched Privacy Policy Text")
     try:
