@@ -9,7 +9,7 @@ import os
 import fitz  # PyMuPDF for PDF
 
 # Set your OpenAI API key
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Try to point pytesseract to the Tesseract executable
 if not os.path.exists(pytesseract.pytesseract.tesseract_cmd):
@@ -79,7 +79,7 @@ if uploaded_file:
 
     # GPT Analysis
     with st.spinner("Analyzing opt-in text with GPT..."):
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are an expert in SMS and email marketing compliance, particularly for A2P 10DLC and Toll-Free verification."},
@@ -99,7 +99,7 @@ if privacy_policy_url:
         st.text_area("Privacy Policy Content:", text[:5000], height=200)
 
         with st.spinner("Analyzing privacy policy with GPT..."):
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": "You are an expert in digital privacy compliance and must evaluate website privacy policies."},
