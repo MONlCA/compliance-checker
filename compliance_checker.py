@@ -78,17 +78,23 @@ if uploaded_file:
     st.text_area("Opt-In Text Detected:", extracted_text, height=200)
 
     # GPT Analysis
-    with st.spinner("Analyzing opt-in text with GPT..."):
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are an expert in SMS and email marketing compliance, particularly for A2P 10DLC and Toll-Free verification."},
-                {"role": "user", "content": f"Please review the following opt-in flow text and identify any compliance issues for A2P 10DLC and Toll-Free requirements. Text:\n{extracted_text}"}
-            ]
-        )
-        gpt_feedback = response.choices[0].message.content
-        st.subheader("GPT Compliance Analysis (Screenshot or PDF)")
-        st.write(gpt_feedback)
+    if extracted_text.strip():
+        with st.spinner("Analyzing opt-in text with GPT..."):
+            try:
+                response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "You are an expert in SMS and email marketing compliance, particularly for A2P 10DLC and Toll-Free verification."},
+                        {"role": "user", "content": f"Please review the following opt-in flow text and identify any compliance issues for A2P 10DLC and Toll-Free requirements. Text:\n{extracted_text}"}
+                    ]
+                )
+                gpt_feedback = response.choices[0].message.content
+                st.subheader("GPT Compliance Analysis (Screenshot or PDF)")
+                st.write(gpt_feedback)
+            except Exception as e:
+                st.error(f"Error while analyzing opt-in flow: {e}")
+    else:
+        st.warning("No text was extracted from the uploaded file. Please try another image or PDF.")
 
 if privacy_policy_url:
     st.subheader("Fetched Privacy Policy Text")
