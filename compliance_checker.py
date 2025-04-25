@@ -3,13 +3,13 @@ from PIL import Image
 import pytesseract
 import requests
 from bs4 import BeautifulSoup
-import openai
+from openai import OpenAI
 import io
 import os
 import fitz  # PyMuPDF for PDF
 
 # Set your OpenAI API key
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Try to point pytesseract to the Tesseract executable
 if not os.path.exists(pytesseract.pytesseract.tesseract_cmd):
@@ -79,14 +79,14 @@ if uploaded_file:
 
     # GPT Analysis
     with st.spinner("Analyzing opt-in text with GPT..."):
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are an expert in SMS and email marketing compliance, particularly for A2P 10DLC and Toll-Free verification."},
                 {"role": "user", "content": f"Please review the following opt-in flow text and identify any compliance issues for A2P 10DLC and Toll-Free requirements. Text:\n{extracted_text}"}
             ]
         )
-        gpt_feedback = response["choices"][0]["message"]["content"]
+        gpt_feedback = response.choices[0].message.content
         st.subheader("GPT Compliance Analysis (Screenshot or PDF)")
         st.write(gpt_feedback)
 
@@ -99,14 +99,14 @@ if privacy_policy_url:
         st.text_area("Privacy Policy Content:", text[:5000], height=200)
 
         with st.spinner("Analyzing privacy policy with GPT..."):
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": "You are an expert in digital privacy compliance and must evaluate website privacy policies."},
                     {"role": "user", "content": f"Please review the following privacy policy text and identify any compliance gaps or concerns relevant to data collection, consent, and third-party sharing:\n{text[:4000]}"}
                 ]
             )
-            gpt_feedback = response["choices"][0]["message"]["content"]
+            gpt_feedback = response.choices[0].message.content
             st.subheader("GPT Compliance Analysis (Privacy Policy)")
             st.write(gpt_feedback)
 
