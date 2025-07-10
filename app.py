@@ -1,15 +1,11 @@
 # app.py (Smart parsing + partial compliance + OCR fallback)
 
-import streamlit.components.v1 as components
-import tempfile
-import os
 import streamlit as st
 import base64
 import re
 from PIL import Image
 import pytesseract
 from io import BytesIO
-
 
 # --- COMPLIANCE CHECK FUNCTIONS ---
 def check_opt_in_compliance(text):
