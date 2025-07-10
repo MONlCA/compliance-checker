@@ -67,7 +67,12 @@ with col1:
     if optin_image:
         image = Image.open(optin_image)
         st.image(image, caption="Uploaded Screenshot", use_column_width=True)
-        image_text = pytesseract.image_to_string(image)
+        try:
+            image_text = pytesseract.image_to_string(image)
+            if not image_text.strip():
+                image_text = "We couldn’t extract any text from the image. Please upload a higher-quality image or paste the opt-in text manually."
+        except Exception as e:
+            image_text = f"❌ OCR failed: {e}"
         st.text_area("📝 Extracted Text from Screenshot", value=image_text, height=100)
 
     combined_optin_text = (optin_text or "") + "\n" + image_text
