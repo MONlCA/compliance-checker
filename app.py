@@ -1,4 +1,4 @@
-# app.py (Updated to show individual compliance checks for both Opt-In and Privacy Policy)
+# app.py (Updated for granular compliance reporting, conditional fix templates, and cleaner output)
 
 import streamlit as st
 import base64
@@ -62,9 +62,18 @@ with col1:
     optin_results, optin_suggestions = {}, []
     if optin_text:
         optin_results, optin_suggestions = check_opt_in_compliance(optin_text)
-        st.markdown("### 📋 Opt-In Compliance Check")
-        for key, status in optin_results.items():
-            st.markdown(f"{'✅' if status else '❌'} {key}")
+        compliant_items = [k for k, v in optin_results.items() if v]
+        non_compliant_items = [k for k, v in optin_results.items() if not v]
+
+        st.markdown("### ✅ Compliant Opt-In Elements")
+        for item in compliant_items:
+            st.success(f"✅ {item}")
+
+        if non_compliant_items:
+            st.markdown("### ❌ Non-Compliant Opt-In Elements")
+            for item in non_compliant_items:
+                st.error(f"❌ {item}")
+
         for tip in optin_suggestions:
             st.warning(tip)
 
@@ -74,16 +83,26 @@ with col2:
     privacy_results, privacy_suggestions = {}, []
     if privacy_text:
         privacy_results, privacy_suggestions = check_privacy_compliance(privacy_text)
-        st.markdown("### 📋 Privacy Policy Compliance Check")
-        for key, status in privacy_results.items():
-            st.markdown(f"{'✅' if status else '❌'} {key}")
+        compliant_items = [k for k, v in privacy_results.items() if v]
+        non_compliant_items = [k for k, v in privacy_results.items() if not v]
+
+        st.markdown("### ✅ Compliant Privacy Elements")
+        for item in compliant_items:
+            st.success(f"✅ {item}")
+
+        if non_compliant_items:
+            st.markdown("### ❌ Non-Compliant Privacy Elements")
+            for item in non_compliant_items:
+                st.error(f"❌ {item}")
+
         for tip in privacy_suggestions:
             st.warning(tip)
 
-# --- COMPLIANCE SUMMARY ---
+# --- COMPLIANCE LOGIC ---
 all_optin_pass = all(optin_results.values()) if optin_results else False
 all_privacy_pass = all(privacy_results.values()) if privacy_results else False
 
+# --- COMPLIANT STATE ---
 if all_optin_pass and all_privacy_pass:
     st.markdown("---")
     st.subheader("🎉 All Clear! Your submission is CTIA compliant.")
@@ -99,8 +118,8 @@ if all_optin_pass and all_privacy_pass:
     st.markdown("**📋 Reply to Customer (Copy/Paste):**")
     st.code("""Hi there! We've reviewed your submission and found that both your opt-in flow and privacy policy meet CTIA compliance standards. No further updates are required at this time. Thanks for ensuring everything is in order!""", language="text")
 
-# --- FIX TEMPLATE ---
-if not all_optin_pass or not all_privacy_pass:
+# --- NON-COMPLIANT STATE ---
+if (optin_text or privacy_text) and (not all_optin_pass or not all_privacy_pass):
     st.markdown("---")
     st.subheader("🛠️ How to Address These Issues")
     st.info("To ensure the privacy policy/opt-in flow is compliant, please ensure:\n\n- Your privacy policy includes SMS/Text Messaging disclosure with opt-out and data handling terms.\n- Your opt-in flow clearly presents an unchecked checkbox for consent, a privacy policy link, and required disclaimers.")
