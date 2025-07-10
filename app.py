@@ -1,9 +1,11 @@
-# app.py (Updated for granular compliance reporting, conditional fix templates, and cleaner output)
+# app.py (Updated to include image upload + OCR for Opt-In screenshots)
 
 import streamlit as st
 import base64
 import re
 from PIL import Image
+import pytesseract
+from io import BytesIO
 
 # --- FUNCTIONS ---
 def check_opt_in_compliance(text):
@@ -59,9 +61,20 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("📥 Opt-In Flow")
     optin_text = st.text_area("Paste opt-in text, URL, or description here", height=120)
+    optin_image = st.file_uploader("📸 Upload or paste screenshot of opt-in flow (PNG/JPG)", type=["png", "jpg", "jpeg"])
+
+    image_text = ""
+    if optin_image:
+        image = Image.open(optin_image)
+        st.image(image, caption="Uploaded Screenshot", use_column_width=True)
+        image_text = pytesseract.image_to_string(image)
+        st.text_area("📝 Extracted Text from Screenshot", value=image_text, height=100)
+
+    combined_optin_text = (optin_text or "") + "\n" + image_text
+
     optin_results, optin_suggestions = {}, []
-    if optin_text:
-        optin_results, optin_suggestions = check_opt_in_compliance(optin_text)
+    if combined_optin_text.strip():
+        optin_results, optin_suggestions = check_opt_in_compliance(combined_optin_text)
         compliant_items = [k for k, v in optin_results.items() if v]
         non_compliant_items = [k for k, v in optin_results.items() if not v]
 
@@ -119,7 +132,7 @@ if all_optin_pass and all_privacy_pass:
     st.code("""Hi there! We've reviewed your submission and found that both your opt-in flow and privacy policy meet CTIA compliance standards. No further updates are required at this time. Thanks for ensuring everything is in order!""", language="text")
 
 # --- NON-COMPLIANT STATE ---
-if (optin_text or privacy_text) and (not all_optin_pass or not all_privacy_pass):
+if (optin_text or privacy_text or optin_image) and (not all_optin_pass or not all_privacy_pass):
     st.markdown("---")
     st.subheader("🛠️ How to Address These Issues")
     st.info("To ensure the privacy policy/opt-in flow is compliant, please ensure:\n\n- Your privacy policy includes SMS/Text Messaging disclosure with opt-out and data handling terms.\n- Your opt-in flow clearly presents an unchecked checkbox for consent, a privacy policy link, and required disclaimers.")
