@@ -1,4 +1,4 @@
-# app.py (v7: Predefined responses + auto-filled feedback)
+# app.py (v8: Partial compliance + enhanced feedback)
 
 import streamlit as st
 import base64
@@ -107,14 +107,18 @@ def check_compliance(text, criteria):
     results = {}
     scores = []
     for label, phrases in criteria.items():
-        matched = False
+        match_score = 0.0
         for phrase in phrases:
             score = fuzzy_match(phrase, text)
             scores.append(score)
-            if score > 0.7:
-                matched = True
-                break
-        results[label] = "✅" if matched else "❌"
+            if score > match_score:
+                match_score = score
+        if match_score > 0.75:
+            results[label] = "✅"
+        elif match_score > 0.5:
+            results[label] = "⚠️"
+        else:
+            results[label] = "❌"
     avg_score = round(sum(scores) / len(scores) * 100, 1) if scores else 0
     return results, avg_score
 
@@ -147,10 +151,7 @@ optin_score = privacy_score = 0
 with col1:
     st.subheader("📥 Opt-In Flow")
     optin_text = st.text_area("Paste opt-in text, URL, or description here", height=120)
-    optin_image = st.file_uploader("📸 Upload or paste screenshot of opt-in flow (PNG/JPG)", type=["png", "jpg", "jpeg"])
-    if st.session_state.get("image_paste_warning") is None:
-        st.info("Note: Pasting screenshots is not currently supported. Please use drag-and-drop or upload instead.")
-        st.session_state.image_paste_warning = True
+    optin_image = st.file_uploader("📸 Upload screenshot of opt-in flow (PNG/JPG)", type=["png", "jpg", "jpeg"])
 
     optin_final = optin_text
     if optin_text.startswith("http"):
@@ -164,6 +165,7 @@ with col1:
         st.progress(optin_score / 100, text=f"Confidence Score: {optin_score}%")
         for item, result in optin_results.items():
             if result == "✅": st.success(f"{result} {item}")
+            elif result == "⚠️": st.warning(f"{result} {item} — Possibly present but unclear.")
             else: st.error(f"{result} {item} — {EXPLANATIONS.get(item, 'Missing required language.')}")
 
 with col2:
@@ -178,6 +180,7 @@ with col2:
         st.progress(privacy_score / 100, text=f"Confidence Score: {privacy_score}%")
         for item, result in privacy_results.items():
             if result == "✅": st.success(f"{result} {item}")
+            elif result == "⚠️": st.warning(f"{result} {item} — Possibly present but unclear.")
             else: st.error(f"{result} {item} — {EXPLANATIONS.get(item, 'Missing required language.')}")
 
 # --- COMPLIANCE SUMMARY ---
@@ -185,8 +188,7 @@ st.markdown("---")
 st.subheader("📋 Summary Message for Customer")
 
 if optin_results or privacy_results:
-    all_ok = all(v == "✅" for v in list(privacy_results.values()) + list(optin_results.values()))
-    if all_ok:
+    if all(v == "✅" for v in list(privacy_results.values()) + list(optin_results.values())):
         st.success("All sections appear compliant!")
         st.code("Hi there! We've reviewed your submission and everything looks compliant with CTIA regulations. ✅")
     else:
