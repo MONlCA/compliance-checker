@@ -1,4 +1,4 @@
-# app.py (v2: Smart NLP compliance + URL fetching + fuzzy matching)
+# app.py (v3: Enhanced compliance logic, paste support, and crash fix)
 
 import streamlit as st
 import base64
@@ -17,43 +17,54 @@ def fuzzy_match(a, b):
 # --- COMPLIANCE CRITERIA (flexible) ---
 PRIVACY_CHECKS = {
     "Consent for SMS messaging": [
-        "By providing your mobile number, you consent to receive automated text messages"
+        "you consent to receive automated text messages",
+        "By providing your mobile number"
     ],
     "Message frequency disclosure": [
-        "Message frequency may vary"
+        "Message frequency may vary",
+        "frequency of messages may vary"
     ],
     "Data rates disclaimer": [
-        "Message and data rates may apply"
+        "Message and data rates may apply",
+        "Msg & data rates may apply"
     ],
     "STOP/Opt-out instruction": [
-        "To opt out, reply STOP to any message", "Reply STOP to unsubscribe"
+        "reply STOP to opt out",
+        "Text STOP to unsubscribe"
     ],
     "No third-party sharing": [
-        "We do not share mobile contact information with third parties or affiliates"
+        "we do not share your mobile contact information",
+        "will not be shared with any third parties"
     ],
     "Subcontractor disclosure": [
-        "Information may be shared with subcontractors in support services"
+        "shared with subcontractors",
+        "subcontractors in support services"
     ]
 }
 
 OPTIN_CHECKS = {
     "Consent checkbox": [
-        "unchecked checkbox for SMS consent"
+        "unchecked checkbox",
+        "tick box to agree"
     ],
     "Privacy policy link": [
-        "privacy policy link"
+        "privacy policy link",
+        "see our privacy policy"
     ],
     "Message frequency disclosure": [
         "Message frequency may vary"
     ],
     "Data rates disclosure": [
-        "Message and data rates may apply"
+        "Message and data rates may apply",
+        "Msg & data rates may apply"
     ],
     "STOP/Opt-out instructions": [
-        "Reply STOP to opt out"
+        "Reply STOP to opt out",
+        "Text STOP to unsubscribe"
     ],
     "Consent language": [
-        "By providing your phone number, you agree to receive SMS notifications"
+        "By providing your phone number",
+        "you agree to receive SMS notifications"
     ]
 }
 
@@ -91,6 +102,10 @@ st.title("📱 A2P Compliance Assistant")
 st.caption("Verify A2P 10DLC & Toll-Free opt-in flows and privacy policies for CTIA compliance.")
 
 col1, col2 = st.columns(2)
+optin_results = {}
+privacy_results = {}
+optin_final = ""
+privacy_final = ""
 
 with col1:
     st.subheader("📥 Opt-In Flow")
@@ -125,20 +140,24 @@ with col2:
 if privacy_final.strip() or optin_final.strip():
     st.markdown("---")
     st.subheader("📋 Summary Message for Customer")
-    all_ok = all(v == "✅" for v in list(privacy_results.values()) + list(optin_results.values()))
-    if all_ok:
-        st.success("All sections appear compliant!")
-        st.code("Hi there! We've reviewed your submission and everything looks compliant with CTIA regulations. ✅")
+
+    if privacy_results and optin_results:
+        all_ok = all(v == "✅" for v in list(privacy_results.values()) + list(optin_results.values()))
+        if all_ok:
+            st.success("All sections appear compliant!")
+            st.code("Hi there! We've reviewed your submission and everything looks compliant with CTIA regulations. ✅")
+        else:
+            st.warning("Some areas need attention:")
+            msg = "Hi there! Based on our review, please address the following items to meet CTIA compliance:\n"
+            if any(v != "✅" for v in optin_results.values()):
+                msg += "\n📥 *Opt-In Issues:*\n"
+                msg += "\n".join(f"- {k} ({v})" for k, v in optin_results.items() if v != "✅") + "\n"
+            if any(v != "✅" for v in privacy_results.values()):
+                msg += "\n🔐 *Privacy Policy Issues:*\n"
+                msg += "\n".join(f"- {k} ({v})" for k, v in privacy_results.items() if v != "✅") + "\n"
+            st.text_area("Copy to Customer:", value=msg, height=250)
     else:
-        st.warning("Some areas need attention:")
-        msg = "Hi there! Based on our review, please address the following items to meet CTIA compliance:\n"
-        if any(v != "✅" for v in optin_results.values()):
-            msg += "\n📥 *Opt-In Issues:*\n"
-            msg += "\n".join(f"- {k} ({v})" for k, v in optin_results.items() if v != "✅") + "\n"
-        if any(v != "✅" for v in privacy_results.values()):
-            msg += "\n🔐 *Privacy Policy Issues:*\n"
-            msg += "\n".join(f"- {k} ({v})" for k, v in privacy_results.items() if v != "✅") + "\n"
-        st.text_area("Copy to Customer:", value=msg, height=250)
+        st.info("Please upload a valid URL, screenshot, or text to start your compliance check.")
 
 st.markdown("---")
 st.caption("Created by Monica Prasad · Built by mprasad@twilio.com · Internal Use Only")
