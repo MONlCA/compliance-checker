@@ -1,4 +1,4 @@
-# app.py (v8: Partial compliance + enhanced feedback)
+# app.py (v9: Full compliance guide + required templates)
 
 import streamlit as st
 import base64
@@ -27,6 +27,10 @@ EXPLANATIONS = {
     "Privacy policy link": "You need to show a clear link to your privacy policy on the opt-in form.",
     "Consent language": "Include consent wording such as 'by providing your number, you agree to receive texts'."
 }
+
+REQUIRED_PRIVACY_POLICY = """SMS/Text Messaging\nBy providing your mobile number, you consent to receive automated text messages from [Company Name] for order [type of messages] notifications. Message frequency may vary. Message and data rates may apply. To opt out, reply “STOP” to any message.\n\nWe do not share mobile contact information with third parties or affiliates for marketing or promotional purposes. Information may be shared with subcontractors in support services, such as customer service. All other categories exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties."""
+
+REQUIRED_OPTIN = """By providing your phone number, you agree to receive text messages from [Your Company Name] regarding [brief, clear message purpose, e.g., 'order updates,' 'appointment reminders,' 'marketing promotions']. Message frequency will vary [or 'is X messages per month' if fixed]. Message and data rates may apply. Reply STOP to unsubscribe at any time. Reply HELP for assistance. For more information, please see our Privacy Policy at [Link to your Privacy Policy] and Terms of Service at [Link to your Terms of Service]."""
 
 # --- COMPLIANCE CRITERIA ---
 PRIVACY_CHECKS = {
@@ -205,7 +209,13 @@ if optin_results or privacy_results:
                 if v != "✅":
                     msg += f"- {k} ({v}) — {EXPLANATIONS.get(k, 'Missing required language.')}\n"
         msg += f"\n🔍 Confidence Scores:\n- Opt-In: {optin_score}%\n- Privacy: {privacy_score}%"
-        st.text_area("Copy to Customer:", value=msg.strip(), height=280)
+
+        if any(v != "✅" for v in privacy_results.values()):
+            msg += "\n\n📄 What a Compliant Privacy Policy should state:\n" + REQUIRED_PRIVACY_POLICY
+        if any(v != "✅" for v in optin_results.values()):
+            msg += "\n\n📝 What a Compliant Opt-In Message should include:\n" + REQUIRED_OPTIN
+
+        st.text_area("Copy to Customer:", value=msg.strip(), height=400)
 else:
     st.info("Please upload a valid URL, screenshot, or text to start your compliance check.")
 
