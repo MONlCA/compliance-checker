@@ -1,4 +1,4 @@
-# app.py (v9: Full compliance guide + required templates)
+# app.py (v10: Enhanced compliant detection + clarity)
 
 import streamlit as st
 import base64
@@ -37,14 +37,14 @@ PRIVACY_CHECKS = {
     "Consent for SMS messaging": [
         "you consent to receive automated text messages",
         "by providing your mobile number",
-        "by entering your phone number you agree to receive sms",
         "you agree to receive messages",
-        "you consent to text messages"
+        "you consent to text messages",
+        "sms/text messaging"
     ],
     "Message frequency disclosure": [
         "message frequency may vary",
-        "frequency of messages may vary",
-        "messages may be sent periodically"
+        "messages may be sent periodically",
+        "frequency of messages may vary"
     ],
     "Data rates disclaimer": [
         "message and data rates may apply",
@@ -55,21 +55,20 @@ PRIVACY_CHECKS = {
     "STOP/Opt-out instruction": [
         "reply STOP to opt out",
         "text STOP to unsubscribe",
-        "if you wish to stop receiving text messages",
         "you may opt out at any time by texting stop"
     ],
     "No third-party sharing": [
-        "we do not share your mobile contact information",
-        "your number will not be shared with third parties",
-        "information will not be shared with any third parties or affiliates",
-        "we will not share mobile contact information with third parties",
-        "we will not disclose your contact information to affiliates"
+        "we do not share mobile contact information with third parties",
+        "not shared with third parties",
+        "exclude text messaging originator opt-in data",
+        "information not be shared with any third parties",
+        "will not disclose your contact information to affiliates"
     ],
     "Subcontractor disclosure": [
         "shared with subcontractors",
         "subcontractors in support services",
         "information sharing to subcontractors is permitted",
-        "information may be disclosed to subcontractors"
+        "disclosed to subcontractors"
     ]
 }
 
@@ -83,7 +82,8 @@ OPTIN_CHECKS = {
     "Privacy policy link": [
         "privacy policy link",
         "see our privacy policy",
-        "click here for privacy policy"
+        "click here for privacy policy",
+        "privacy policy at"
     ],
     "Message frequency disclosure": [
         "message frequency may vary",
@@ -97,12 +97,14 @@ OPTIN_CHECKS = {
     "STOP/Opt-out instructions": [
         "reply STOP to opt out",
         "text STOP to unsubscribe",
-        "you may opt out at any time"
+        "you may opt out at any time",
+        "reply STOP to unsubscribe"
     ],
     "Consent language": [
         "by providing your phone number",
         "you agree to receive SMS notifications",
-        "you consent to receiving text messages"
+        "you consent to receiving text messages",
+        "you agree to receive text messages about this event"
     ]
 }
 
