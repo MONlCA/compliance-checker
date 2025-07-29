@@ -1,4 +1,4 @@
-# app.py (v10: Enhanced compliant detection + clarity)
+# app.py (v11: Accurate compliance logic with flexible matching)
 
 import streamlit as st
 import base64
@@ -28,41 +28,18 @@ EXPLANATIONS = {
     "Consent language": "Include consent wording such as 'by providing your number, you agree to receive texts'."
 }
 
-REQUIRED_PRIVACY_POLICY = """SMS/Text Messaging\nBy providing your mobile number, you consent to receive automated text messages from [Company Name] for order [type of messages] notifications. Message frequency may vary. Message and data rates may apply. To opt out, reply “STOP” to any message.\n\nWe do not share mobile contact information with third parties or affiliates for marketing or promotional purposes. Information may be shared with subcontractors in support services, such as customer service. All other categories exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties."""
+REQUIRED_PRIVACY_POLICY = """We do not share mobile contact information with third parties or affiliates for marketing or promotional purposes. Information may be shared with subcontractors in support services, such as customer service. All other categories exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties."""
 
-REQUIRED_OPTIN = """By providing your phone number, you agree to receive text messages from [Your Company Name] regarding [brief, clear message purpose, e.g., 'order updates,' 'appointment reminders,' 'marketing promotions']. Message frequency will vary [or 'is X messages per month' if fixed]. Message and data rates may apply. Reply STOP to unsubscribe at any time. Reply HELP for assistance. For more information, please see our Privacy Policy at [Link to your Privacy Policy] and Terms of Service at [Link to your Terms of Service]."""
+REQUIRED_OPTIN = """By providing your phone number, you agree to receive SMS notifications about this event from [Organization Name]. Message frequency varies. Message & data rates may apply. You can reply STOP to opt out at any time. View our privacy policy."""
 
 # --- COMPLIANCE CRITERIA ---
 PRIVACY_CHECKS = {
-    "Consent for SMS messaging": [
-        "you consent to receive automated text messages",
-        "by providing your mobile number",
-        "you agree to receive messages",
-        "you consent to text messages",
-        "sms/text messaging"
-    ],
-    "Message frequency disclosure": [
-        "message frequency may vary",
-        "messages may be sent periodically",
-        "frequency of messages may vary"
-    ],
-    "Data rates disclaimer": [
-        "message and data rates may apply",
-        "msg & data rates may apply",
-        "standard messaging rates apply",
-        "carrier charges may apply"
-    ],
-    "STOP/Opt-out instruction": [
-        "reply STOP to opt out",
-        "text STOP to unsubscribe",
-        "you may opt out at any time by texting stop"
-    ],
     "No third-party sharing": [
         "we do not share mobile contact information with third parties",
         "not shared with third parties",
-        "exclude text messaging originator opt-in data",
-        "information not be shared with any third parties",
-        "will not disclose your contact information to affiliates"
+        "will not be shared with any third parties",
+        "will not disclose your contact information to affiliates",
+        "information will not be shared with third parties"
     ],
     "Subcontractor disclosure": [
         "shared with subcontractors",
@@ -73,38 +50,31 @@ PRIVACY_CHECKS = {
 }
 
 OPTIN_CHECKS = {
-    "Consent checkbox": [
-        "unchecked checkbox",
-        "tick box to agree",
-        "check box to consent",
-        "checkbox to opt-in"
-    ],
-    "Privacy policy link": [
-        "privacy policy link",
-        "see our privacy policy",
-        "click here for privacy policy",
-        "privacy policy at"
+    "Consent language": [
+        "by providing your phone number, you agree to receive SMS notifications",
+        "you consent to receive SMS messages",
+        "by entering your number, you agree to receive texts",
+        "you agree to receive text messages about this event"
     ],
     "Message frequency disclosure": [
         "message frequency may vary",
         "frequency of messages may vary"
     ],
-    "Data rates disclosure": [
+    "Data rates disclaimer": [
         "message and data rates may apply",
         "msg & data rates may apply",
         "carrier charges may apply"
     ],
-    "STOP/Opt-out instructions": [
+    "STOP/Opt-out instruction": [
         "reply STOP to opt out",
         "text STOP to unsubscribe",
-        "you may opt out at any time",
-        "reply STOP to unsubscribe"
+        "you may opt out at any time"
     ],
-    "Consent language": [
-        "by providing your phone number",
-        "you agree to receive SMS notifications",
-        "you consent to receiving text messages",
-        "you agree to receive text messages about this event"
+    "Privacy policy link": [
+        "view our privacy policy",
+        "see our privacy policy",
+        "privacy policy at",
+        "link to privacy policy"
     ]
 }
 
