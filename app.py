@@ -116,7 +116,7 @@ def extract_text_from_image(img_file):
 
 # --- STREAMLIT UI ---
 st.set_page_config("A2P Compliance Assistant", layout="wide")
-st.title("📱 A2P Compliance Assistant")
+st.title("📱 A2P/TFV Compliance Assistance")
 st.caption("Verify A2P 10DLC & Toll-Free opt-in flows and privacy policies for CTIA compliance.")
 
 col1, col2 = st.columns(2)
