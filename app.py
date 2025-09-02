@@ -124,3 +124,10 @@ st.markdown("### 📚 Documentation")
 st.markdown("- [A2P 10DLC Campaign Approval Requirements](https://help.twilio.com/articles/11847054539547-A2P-10DLC-Campaign-Approval-Requirements)")
 st.markdown("- [Required Information for Toll-Free Verification](https://help.twilio.com/articles/13264118705051-Required-Information-for-Toll-Free-Verification)")
 
+# Watermark footer
+st.markdown(
+    "<div style='text-align: center; color: gray; font-size: 13px; margin-top: 50px;'>"
+    "🔒 For Internal Use Only — Built by Monica Prasad — mprasad@twilio.com"
+    "</div>",
+    unsafe_allow_html=True
+)
