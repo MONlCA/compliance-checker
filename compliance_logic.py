@@ -48,10 +48,7 @@ def check_privacy_compliance(text: str) -> dict:
         "violations": violations
     }
 
-def check_compliance(opt_in_text: str, privacy_policy_text: str, use_case: str = None) -> dict:
-    """
-    Wrapper function for the main app to evaluate both opt-in and privacy policy compliance.
-    """
+def check_compliance(opt_in_text: str, privacy_policy_text: str, use_case: str = None, special_use_case: str = None) -> dict:
     return {
         "opt_in_result": check_opt_in_compliance(opt_in_text),
         "privacy_result": check_privacy_compliance(privacy_policy_text),

@@ -96,4 +96,3 @@ st.markdown(
     "</div>",
     unsafe_allow_html=True
 )
-from compliance_logic import check_opt_in_compliance, check_privacy_compliance
