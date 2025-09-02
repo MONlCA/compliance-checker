@@ -1,60 +1,60 @@
 import streamlit as st
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-from compliance_logic import check_compliance
 from utils import extract_text_from_image, extract_text_from_url
+from compliance_logic import check_compliance
 
-st.set_page_config(page_title="A2P/TFV Compliance Assistance", layout="wide")
+st.set_page_config(layout="wide")
+st.markdown("# A2P/TFV Compliance Assistance")
 
-# --- Title ---
-st.title("A2P/TFV Compliance Assistance")
-
-st.markdown("---")
-
-# --- Side-by-Side Input Boxes ---
+# --- Layout ---
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("Opt-in")
-    opt_in_input = st.text_area("Paste Opt-in Language or Upload Image (OCR supported)", key="opt_in")
+    st.markdown("### Opt-in")
+    opt_in_input = st.text_area("Paste Opt-in Language or Upload Image (OCR supported)", height=120)
+    opt_in_image = st.file_uploader("Or upload Opt-in Screenshot", type=["png", "jpg", "jpeg"], key="opt_in_image")
 
 with col2:
-    st.subheader("Privacy Policy")
-    privacy_input = st.text_area("Paste Privacy Policy Language or Upload Image (OCR supported)", key="privacy")
+    st.markdown("### Privacy Policy")
+    privacy_input = st.text_area("Paste Privacy Policy Language or Upload Image (OCR supported)", height=120)
+    privacy_image = st.file_uploader("Or upload Privacy Policy Screenshot or Link", type=["png", "jpg", "jpeg"], key="privacy_image")
+    privacy_url = st.text_input("Or enter Privacy Policy URL")
 
-st.markdown("---")
+# --- OCR & Extraction Logic ---
+if opt_in_image:
+    opt_in_input = extract_text_from_image(opt_in_image)
 
-# --- Submit Button ---
+if privacy_image:
+    privacy_input = extract_text_from_image(privacy_image)
+
+if privacy_url and not privacy_input:
+    privacy_input = extract_text_from_url(privacy_url)
+
+# --- Check Compliance Button ---
 if st.button("Check Compliance"):
     with st.spinner("Checking compliance..."):
-        results = check_compliance(opt_in_input, privacy_input)
+        if not opt_in_input.strip() and not privacy_input.strip():
+            st.warning("Please enter at least Opt-in or Privacy Policy text.")
+        else:
+            try:
+                results = check_compliance(opt_in_input, privacy_input)
 
-        st.markdown("### 📝 Compliance Results")
+                st.markdown("### 📝 Compliance Results")
 
-        if results.get("opt_in_feedback"):
-            st.markdown("#### ✅ Opt-in Feedback")
-            st.write(results["opt_in_feedback"])
-        
-        if results.get("privacy_feedback"):
-            st.markdown("#### 🔒 Privacy Policy Feedback")
-            st.write(results["privacy_feedback"])
+                st.markdown("#### ✅ Opt-in Feedback")
+                st.write(results.get("opt_in_feedback", "No opt-in input provided or match found."))
 
-        if results.get("customer_copy"):
-            st.markdown("#### 📋 Copy/Paste for Customer")
-            st.code(results["customer_copy"], language="markdown")
+                st.markdown("#### 🔒 Privacy Policy Feedback")
+                st.write(results.get("privacy_feedback", "No privacy policy input provided or match found."))
 
-# --- Footer with Helpful Links ---
-st.markdown("---")
-st.markdown("#### 📚 Reference Documentation")
-st.markdown("- [A2P 10DLC Campaign Approval Requirements](https://help.twilio.com/articles/11847054539547-A2P-10DLC-Campaign-Approval-Requirements)")
-st.markdown("- [Required Information for Toll-Free Verification](https://help.twilio.com/articles/13264118705051-Required-Information-for-Toll-Free-Verification)")
+                st.markdown("#### 📋 Copy/Paste for Customer")
+                st.code(results.get("customer_copy", "No customer message generated."), language="markdown")
 
-# --- Watermark ---
-st.markdown(
-    "<div style='text-align: center; color: gray; font-size: small; padding-top: 20px;'>"
-    "For Internal Use Only — Built By Monica Prasad — mprasad@twilio.com"
-    "</div>",
-    unsafe_allow_html=True
-)
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
+
+# --- Footer ---
+st.divider()
+st.markdown("### 📚 Reference Documentation")
+st.markdown("- [A2P 10DLC Campaign Approval Requirements](https://support.twilio.com/hc/en-us/articles/1500001265802)")
+st.markdown("- [Required Information for Toll-Free Verification](https://support.twilio.com/hc/en-us/articles/360056451333)")
+st.markdown("<br><center><sub>For Internal Use Only — Built By Monica Prasad — mprasad@twilio.com</sub></center>", unsafe_allow_html=True)

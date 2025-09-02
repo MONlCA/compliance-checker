@@ -1,64 +1,38 @@
 import re
+import requests
+from bs4 import BeautifulSoup
+from PIL import Image
+import pytesseract
 
-def contains_required_language(text: str, required_patterns: list[str]) -> list[str]:
-    """
-    Checks for the presence of required language patterns in a given text.
-    Returns a list of matching patterns.
-    """
+
+def contains_required_language(text: str, patterns: list) -> list:
     matches = []
-    for pattern in required_patterns:
+    for pattern in patterns:
         if re.search(pattern, text, re.IGNORECASE):
             matches.append(pattern)
     return matches
 
-def extract_noncompliant_phrases(text: str, blocked_patterns: list[str]) -> list[str]:
-    """
-    Identifies known non-compliant phrases or patterns in the given text.
-    Returns a list of problematic patterns found.
-    """
-    flagged = []
+
+def extract_noncompliant_phrases(text: str, blocked_patterns: list) -> list:
+    violations = []
     for pattern in blocked_patterns:
         if re.search(pattern, text, re.IGNORECASE):
-            flagged.append(pattern)
-    return flagged
+            violations.append(pattern)
+    return violations
 
-def format_feedback(header: str, items: list[str], icon: str = "❌") -> str:
-    """
-    Formats the feedback message with an icon and bullet point list.
-    """
-    if not items:
-        return f"✅ {header} appears compliant."
-    
-    message = f"{icon} **{header} issues found:**\n"
-    for item in items:
-        message += f"- {icon} `{item}`\n"
-    return message
 
-from PIL import Image
-import pytesseract
-import requests
-from bs4 import BeautifulSoup
-
-def extract_text_from_image(image_file):
-    """
-    Extract text from an uploaded image using Tesseract OCR.
-    """
-    image = Image.open(image_file)
-    return pytesseract.image_to_string(image)
-
-def extract_text_from_url(url):
-    """
-    Fetch and extract visible text from a given URL.
-    """
+def extract_text_from_image(image_file) -> str:
     try:
-        response = requests.get(url, timeout=5)
-        soup = BeautifulSoup(response.text, "html.parser")
-
-        # Remove script and style content
-        for element in soup(["script", "style"]):
-            element.extract()
-
-        return soup.get_text(separator=" ", strip=True)
+        image = Image.open(image_file)
+        return pytesseract.image_to_string(image)
     except Exception as e:
-        return f"Error extracting text: {str(e)}"
+        return f"OCR failed: {e}"
 
+
+def extract_text_from_url(url: str) -> str:
+    try:
+        response = requests.get(url, timeout=10)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        return soup.get_text(separator=' ', strip=True)
+    except Exception as e:
+        return f"Failed to fetch or parse URL: {e}"
