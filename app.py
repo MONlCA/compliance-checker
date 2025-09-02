@@ -190,11 +190,18 @@ if st.button("✅ Check Compliance", key="check_button"):
         else:
             st.markdown(f"**Compliance Status:** {'🟩 Compliant' if privacy_result['compliant'] else '🟥 Not Compliant'}")
             st.markdown("**Required Phrases:**")
-            for p in required_privacy_phrases:
-                if p in processed_privacy_text.lower():
+            
+            # The corrected logic to only show checkmarks if compliant
+            if privacy_result['compliant']:
+                for p in required_privacy_phrases:
                     st.markdown(f"✔️ {p}")
-                else:
-                    st.markdown(f"❌ {p}")
+            else:
+                for p in required_privacy_phrases:
+                    if p in processed_privacy_text.lower():
+                        st.markdown(f"✔️ {p}")
+                    else:
+                        st.markdown(f"❌ {p}")
+            
             if privacy_result["prohibited_phrases_found"]:
                 st.markdown("**Non-Compliant Phrases Found:**")
                 for p in privacy_result['prohibited_phrases_found']:
