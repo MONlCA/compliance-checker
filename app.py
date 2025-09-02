@@ -163,17 +163,20 @@ if st.button("✅ Check Compliance", key="check_button"):
         st.markdown("#### ✅ Opt-in Feedback")
         optin_result = check_opt_in_compliance(processed_optin_text)
         
-        # Improved output formatting to handle empty lists gracefully
-        st.write(optin_result["message"])
-        st.markdown("**Required Phrases:**")
-        if optin_result['present_required']:
-            for p in optin_result['present_required']:
-                st.markdown(f"✔️ {p}")
-        if optin_result['missing_required']:
-            for p in optin_result['missing_required']:
-                st.markdown(f"❌ {p}")
+        # New logic to handle empty opt-in and display errors line-by-line
+        if not processed_optin_text.strip():
+            st.warning("⚠️ No opt-in language provided.")
+        else:
+            st.write(optin_result["message"])
+            st.markdown("**Required Phrases:**")
+            for p in required_optin_phrases:
+                if p in processed_optin_text.lower():
+                    st.markdown(f"✔️ {p}")
+                else:
+                    st.markdown(f"❌ {p}")
+
         if optin_result["prohibited_phrases_found"]:
-            st.markdown("**Prohibited Phrases Found:**")
+            st.markdown("**Non-Compliant Phrases Found:**")
             for p in optin_result['prohibited_phrases_found']:
                 st.markdown(f"🟥 {p}")
 
@@ -181,19 +184,21 @@ if st.button("✅ Check Compliance", key="check_button"):
         st.markdown("#### 📄 Privacy Policy Feedback")
         privacy_result = check_privacy_compliance(processed_privacy_text)
         
-        # Improved output formatting to handle empty lists gracefully
-        st.markdown(f"**Compliance Status:** {'🟩 Compliant' if privacy_result['compliant'] else '🟥 Not Compliant'}")
-        st.markdown("**Required Phrases:**")
-        if privacy_result['present_required']:
-            for p in privacy_result['present_required']:
-                st.markdown(f"✔️ {p}")
-        if privacy_result['missing_required']:
-            for p in privacy_result['missing_required']:
-                st.markdown(f"❌ {p}")
-        if privacy_result["prohibited_phrases_found"]:
-            st.markdown("**Prohibited Phrases Found:**")
-            for p in privacy_result['prohibited_phrases_found']:
-                st.markdown(f"🟥 {p}")
+        # New logic to handle empty opt-in and display errors line-by-line
+        if not processed_privacy_text.strip():
+            st.warning("⚠️ No privacy policy language provided.")
+        else:
+            st.markdown(f"**Compliance Status:** {'🟩 Compliant' if privacy_result['compliant'] else '🟥 Not Compliant'}")
+            st.markdown("**Required Phrases:**")
+            for p in required_privacy_phrases:
+                if p in processed_privacy_text.lower():
+                    st.markdown(f"✔️ {p}")
+                else:
+                    st.markdown(f"❌ {p}")
+            if privacy_result["prohibited_phrases_found"]:
+                st.markdown("**Non-Compliant Phrases Found:**")
+                for p in privacy_result['prohibited_phrases_found']:
+                    st.markdown(f"🟥 {p}")
 
     # --- Copy/Paste Summary ---
     st.markdown("---")
@@ -203,12 +208,12 @@ if st.button("✅ Check Compliance", key="check_button"):
         summary = f"""**Opt-in Compliance:** {'Compliant' if optin_result['compliant'] else 'Not Compliant'}
 - Required Phrases Present: {', '.join(optin_result['present_required']) if optin_result['present_required'] else 'None'}
 - Missing Required Phrases: {', '.join(optin_result['missing_required']) if optin_result['missing_required'] else 'None'}
-- Prohibited Phrases Found: {', '.join(optin_result['prohibited_phrases_found']) if optin_result['prohibited_phrases_found'] else 'None'}
+- Non-Compliant Phrases Found: {', '.join(optin_result['prohibited_phrases_found']) if optin_result['prohibited_phrases_found'] else 'None'}
 
 **Privacy Policy Compliance:** {'Compliant' if privacy_result['compliant'] else 'Not Compliant'}
 - Required Phrases Present: {', '.join(privacy_result['present_required']) if privacy_result['present_required'] else 'None'}
 - Missing Required Phrases: {', '.join(privacy_result['missing_required']) if privacy_result['missing_required'] else 'None'}
-- Prohibited Phrases Found: {', '.join(privacy_result['prohibited_phrases_found']) if privacy_result['prohibited_phrases_found'] else 'None'}
+- Non-Compliant Phrases Found: {', '.join(privacy_result['prohibited_phrases_found']) if privacy_result['prohibited_phrases_found'] else 'None'}
 """
         st.code(summary, language="markdown")
 
