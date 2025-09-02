@@ -1,73 +1,204 @@
 import streamlit as st
-from utils import extract_text_from_image, extract_text_from_url
-from compliance_logic import check_opt_in_compliance, check_privacy_compliance
+from PIL import Image
+import pytesseract
+import requests
+from bs4 import BeautifulSoup
+import io
+import re
 
-st.set_page_config(page_title="📲 A2P/TFV Compliance Assistance", layout="wide")
+# --- Utility Functions (from utils.py) ---
+
+def extract_text_from_image(uploaded_file):
+    """
+    Extracts text from an uploaded image file using OCR.
+    """
+    try:
+        image = Image.open(uploaded_file)
+        # Using pytesseract to perform OCR on the image
+        text = pytesseract.image_to_string(image)
+        return text
+    except Exception as e:
+        return f"Failed to extract text from image: {e}"
+
+def extract_text_from_url(url):
+    """
+    Scrapes and extracts text content from a given URL.
+    """
+    try:
+        response = requests.get(url, timeout=10)
+        # Ensure the request was successful
+        response.raise_for_status()  
+        soup = BeautifulSoup(response.text, 'html.parser')
+        return soup.get_text(separator=' ', strip=True)
+    except requests.exceptions.RequestException as e:
+        return f"Failed to fetch content from URL: {e}"
+    except Exception as e:
+        return f"An error occurred during URL processing: {e}"
+
+# --- Compliance Logic (from compliance_logic.py) ---
+
+# Pre-defined compliance phrases
+required_optin_phrases = [
+    "consent to receive messages",
+    "message and data rates may apply",
+    "reply stop to unsubscribe",
+    "reply help for help"
+]
+
+prohibited_optin_phrases = [
+    "you will not receive any messages",
+    "we will not contact you"
+]
+
+required_privacy_phrases = [
+    "how information is collected",
+    "how information is used",
+    "how to opt-out",
+    "third parties",
+    "data security",
+    "contact information"
+]
+
+prohibited_privacy_phrases = [
+    "we sell your data",
+    "no responsibility",
+    "at your own risk"
+]
+
+def check_opt_in_compliance(text: str):
+    """
+    Checks opt-in language for compliance with required and prohibited phrases.
+    """
+    if not text.strip():
+        return {
+            "compliant": False,
+            "message": "⚠️ No opt-in language provided.",
+            "present_required": [],
+            "missing_required": required_optin_phrases,
+            "prohibited_phrases_found": []
+        }
+
+    lower_text = text.lower()
+    present_required = [phrase for phrase in required_optin_phrases if phrase in lower_text]
+    prohibited_found = [phrase for phrase in prohibited_optin_phrases if phrase in lower_text]
+    missing_required = [phrase for phrase in required_optin_phrases if phrase not in lower_text]
+
+    compliant = len(missing_required) == 0 and len(prohibited_found) == 0
+
+    return {
+        "compliant": compliant,
+        "message": "✅ Opt-in is compliant." if compliant else "❌ Opt-in is not compliant.",
+        "present_required": present_required,
+        "missing_required": missing_required,
+        "prohibited_phrases_found": prohibited_found
+    }
+
+def check_privacy_compliance(text: str):
+    """
+    Checks privacy policy for compliance with required and prohibited phrases.
+    """
+    if not text.strip():
+        return {
+            "compliant": False,
+            "present_required": [],
+            "missing_required": required_privacy_phrases,
+            "prohibited_phrases_found": []
+        }
+
+    lower_text = text.lower()
+    present_required = [phrase for phrase in required_privacy_phrases if phrase in lower_text]
+    prohibited_found = [phrase for phrase in prohibited_privacy_phrases if phrase in lower_text]
+    missing_required = [phrase for phrase in required_privacy_phrases if phrase not in lower_text]
+
+    compliant = len(missing_required) == 0 and len(prohibited_found) == 0
+
+    return {
+        "compliant": compliant,
+        "present_required": present_required,
+        "missing_required": missing_required,
+        "prohibited_phrases_found": prohibited_found
+    }
+
+# --- Streamlit Application UI ---
+
+st.set_page_config(page_title="A2P/TFV Compliance Assistance", layout="wide")
 
 st.markdown("## 📲 A2P/TFV Compliance Assistance")
-st.markdown("---")
 
-# Layout Columns
-optin_col, privacy_col = st.columns(2)
+# Input Sections
+st.markdown("### Opt-in")
+optin_text = st.text_area("Paste Opt-in Language or Upload Image", height=100, label_visibility="collapsed", key="optin_text_area")
+optin_image = st.file_uploader("Or upload Opt-in Screenshot", type=["png", "jpg", "jpeg"], label_visibility="visible", key="optin_uploader")
 
-with optin_col:
-    st.subheader("Opt-in")
-    optin_input = st.text_area("Paste Opt-in Language or Upload Image", height=150, label_visibility="collapsed")
-    optin_image = st.file_uploader("Or upload Opt-in Screenshot", type=["png", "jpg", "jpeg"])
+st.markdown("### Privacy Policy")
+privacy_text = st.text_area("Paste Privacy Policy Language or Upload Image / URL", height=100, label_visibility="collapsed", key="privacy_text_area")
+privacy_image = st.file_uploader("Or upload Privacy Policy Screenshot", type=["png", "jpg", "jpeg"], label_visibility="visible", key="privacy_uploader")
 
-with privacy_col:
-    st.subheader("Privacy Policy")
-    privacy_input = st.text_area("Paste Privacy Policy Language or Upload Image / URL", height=150, label_visibility="collapsed")
-    privacy_image = st.file_uploader("Or upload Privacy Policy Screenshot", type=["png", "jpg", "jpeg"])
+# --- Logic to handle different input types ---
+processed_optin_text = ""
+if optin_image:
+    processed_optin_text = extract_text_from_image(optin_image)
+elif optin_text:
+    processed_optin_text = optin_text
 
-if st.button("✅ Check Compliance"):
-    st.markdown("### 📋 Compliance Results")
-    with st.expander("✅ Opt-in Feedback", expanded=True):
-        if not optin_input and not optin_image:
-            st.warning("⚠️ No opt-in language provided.")
-        else:
-            optin_text = optin_input or extract_text_from_image(optin_image)
-            optin_result = check_opt_in_compliance(optin_text)
-            if optin_result["compliant"]:
-                st.success("✅ Opt-in is compliant.")
-            else:
-                st.error("❌ Opt-in is not compliant.")
-            st.markdown(f"- **Missing elements**: {optin_result['missing']}")
-            st.markdown(f"- **Prohibited phrases**: {optin_result['prohibited']}")
+processed_privacy_text = ""
+if privacy_image:
+    processed_privacy_text = extract_text_from_image(privacy_image)
+elif privacy_text and privacy_text.startswith("http"):
+    processed_privacy_text = extract_text_from_url(privacy_text)
+elif privacy_text:
+    processed_privacy_text = privacy_text
 
-    with st.expander("📄 Privacy Policy Feedback", expanded=True):
-        if not privacy_input and not privacy_image:
-            st.warning("⚠️ No privacy policy provided.")
-        else:
-            privacy_text = privacy_input
-            if not privacy_input and privacy_image:
-                privacy_text = extract_text_from_image(privacy_image)
-            elif privacy_input.startswith("http"):
-                privacy_text = extract_text_from_url(privacy_input)
+# Button to trigger compliance check
+if st.button("✅ Check Compliance", key="check_button"):
+    st.markdown("### 🗂️ Compliance Results")
 
-            privacy_result = check_privacy_compliance(privacy_text)
+    # --- Opt-in Check ---
+    st.markdown("#### ✅ Opt-in Feedback")
+    optin_result = check_opt_in_compliance(processed_optin_text)
+    
+    # Improved output formatting to handle empty lists gracefully
+    st.write(optin_result["message"])
+    st.markdown(f"**Required Phrases:** {' '.join([f'✔️ {p}' for p in optin_result['present_required']]) if optin_result['present_required'] else 'None'}")
+    st.markdown(f"**Missing Phrases:** {' '.join([f'❌ {p}' for p in optin_result['missing_required']]) if optin_result['missing_required'] else 'None'}")
+    if optin_result["prohibited_phrases_found"]:
+        st.markdown(f"**Prohibited Phrases Found:** {' '.join([f'🟥 {p}' for p in optin_result['prohibited_phrases_found']])}")
 
-            if privacy_result["compliant"]:
-                st.success("✅ Privacy policy is compliant.")
-            else:
-                st.error("❌ Privacy policy is not compliant.")
+    # --- Privacy Policy Check ---
+    st.markdown("#### 📄 Privacy Policy Feedback")
+    privacy_result = check_privacy_compliance(processed_privacy_text)
+    
+    # Improved output formatting to handle empty lists gracefully
+    st.markdown(f"**Compliance Status:** {'🟩 Compliant' if privacy_result['compliant'] else '🟥 Not Compliant'}")
+    st.markdown(f"**Required Phrases:** {' '.join([f'✔️ {p}' for p in privacy_result['present_required']]) if privacy_result['present_required'] else 'None'}")
+    st.markdown(f"**Missing Phrases:** {' '.join([f'❌ {p}' for p in privacy_result['missing_required']]) if privacy_result['missing_required'] else 'None'}")
+    if privacy_result["prohibited_phrases_found"]:
+        st.markdown(f"**Prohibited Phrases Found:** {' '.join([f'🟥 {p}' for p in privacy_result['prohibited_phrases_found']])}")
 
-            st.markdown(f"**Missing Required Phrases:**\n```\n{privacy_result['missing']}\n```")
-            st.markdown(f"**Prohibited Phrases Found:**\n```\n{privacy_result['prohibited']}\n```")
+    # --- Copy/Paste Summary ---
+    st.markdown("---")
+    st.markdown("#### 🧾 Copy/Paste for Customer")
+    with st.expander("📋 Click to Expand"):
+        # The f-string is now more carefully constructed to handle newlines and indentation
+        summary = f"""**Opt-in Compliance:** {'Compliant' if optin_result['compliant'] else 'Not Compliant'}
+- Required Phrases Present: {', '.join(optin_result['present_required']) if optin_result['present_required'] else 'None'}
+- Missing Required Phrases: {', '.join(optin_result['missing_required']) if optin_result['missing_required'] else 'None'}
+- Prohibited Phrases Found: {', '.join(optin_result['prohibited_phrases_found']) if optin_result['prohibited_phrases_found'] else 'None'}
 
-    with st.expander("📝 Copy/Paste for Customer"):
-        st.code(f"""✅ Opt-in is {'compliant' if optin_result['compliant'] else 'not compliant'}.
-- Missing elements: {optin_result['missing']}
-- Prohibited phrases: {optin_result['prohibited']}
+**Privacy Policy Compliance:** {'Compliant' if privacy_result['compliant'] else 'Not Compliant'}
+- Required Phrases Present: {', '.join(privacy_result['present_required']) if privacy_result['present_required'] else 'None'}
+- Missing Required Phrases: {', '.join(privacy_result['missing_required']) if privacy_result['missing_required'] else 'None'}
+- Prohibited Phrases Found: {', '.join(privacy_result['prohibited_phrases_found']) if privacy_result['prohibited_phrases_found'] else 'None'}
+"""
+        st.code(summary, language="markdown")
 
-✅ Privacy Policy is {'compliant' if privacy_result['compliant'] else 'not compliant'}.
-- Missing elements: {privacy_result['missing']}
-- Prohibited phrases: {privacy_result['prohibited']}
-""")
-
+# Reference Section
 st.markdown("---")
 st.markdown("### 📚 Reference Documentation")
-st.markdown("- [A2P 10DLC Campaign Approval Requirements](https://support.twilio.com/hc/en-us/articles/1260805599430)")
-st.markdown("- [Required Information for Toll-Free Verification](https://support.twilio.com/hc/en-us/articles/1260805413030)")
-st.markdown("---")
-st.markdown("For Internal Use Only — Built By Monica Prasad — [mprasad@twilio.com](mailto:mprasad@twilio.com)")
+st.markdown("- [A2P 10DLC Campaign Approval Requirements](https://support.twilio.com/hc/en-us/articles/1260805599530)")
+st.markdown("- [Required Information for Toll-Free Verification](https://support.twilio.com/hc/en-us/articles/10624736761299)")
+
+# Footer
+st.markdown("""<div style='text-align: center; color: gray; font-size: 0.8em;'>
+For Internal Use Only — Built By Monica Prasad — <a style='color: gray;' href='mailto:mprasad@twilio.com'>mprasad@twilio.com</a>
+</div>""", unsafe_allow_html=True)
