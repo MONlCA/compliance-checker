@@ -126,13 +126,17 @@ st.set_page_config(page_title="A2P/TFV Compliance Assistance", layout="wide")
 st.markdown("## 📲 A2P/TFV Compliance Assistance")
 
 # Input Sections
-st.markdown("### Opt-in")
-optin_text = st.text_area("Paste Opt-in Language or Upload Image", height=100, label_visibility="collapsed", key="optin_text_area")
-optin_image = st.file_uploader("Or upload Opt-in Screenshot", type=["png", "jpg", "jpeg"], label_visibility="visible", key="optin_uploader")
+col1, col2 = st.columns(2)
 
-st.markdown("### Privacy Policy")
-privacy_text = st.text_area("Paste Privacy Policy Language or Upload Image / URL", height=100, label_visibility="collapsed", key="privacy_text_area")
-privacy_image = st.file_uploader("Or upload Privacy Policy Screenshot", type=["png", "jpg", "jpeg"], label_visibility="visible", key="privacy_uploader")
+with col1:
+    st.markdown("### Opt-in")
+    optin_text = st.text_area("Paste Opt-in Language or Upload Image", height=100, label_visibility="collapsed", key="optin_text_area")
+    optin_image = st.file_uploader("Or upload Opt-in Screenshot", type=["png", "jpg", "jpeg"], label_visibility="visible", key="optin_uploader")
+
+with col2:
+    st.markdown("### Privacy Policy")
+    privacy_text = st.text_area("Paste Privacy Policy Language or Upload Image / URL", height=100, label_visibility="collapsed", key="privacy_text_area")
+    privacy_image = st.file_uploader("Or upload Privacy Policy Screenshot", type=["png", "jpg", "jpeg"], label_visibility="visible", key="privacy_uploader")
 
 # --- Logic to handle different input types ---
 processed_optin_text = ""
@@ -153,27 +157,43 @@ elif privacy_text:
 if st.button("✅ Check Compliance", key="check_button"):
     st.markdown("### 🗂️ Compliance Results")
 
-    # --- Opt-in Check ---
-    st.markdown("#### ✅ Opt-in Feedback")
-    optin_result = check_opt_in_compliance(processed_optin_text)
-    
-    # Improved output formatting to handle empty lists gracefully
-    st.write(optin_result["message"])
-    st.markdown(f"**Required Phrases:** {' '.join([f'✔️ {p}' for p in optin_result['present_required']]) if optin_result['present_required'] else 'None'}")
-    st.markdown(f"**Missing Phrases:** {' '.join([f'❌ {p}' for p in optin_result['missing_required']]) if optin_result['missing_required'] else 'None'}")
-    if optin_result["prohibited_phrases_found"]:
-        st.markdown(f"**Prohibited Phrases Found:** {' '.join([f'🟥 {p}' for p in optin_result['prohibited_phrases_found']])}")
+    col_optin, col_privacy = st.columns(2)
 
-    # --- Privacy Policy Check ---
-    st.markdown("#### 📄 Privacy Policy Feedback")
-    privacy_result = check_privacy_compliance(processed_privacy_text)
-    
-    # Improved output formatting to handle empty lists gracefully
-    st.markdown(f"**Compliance Status:** {'🟩 Compliant' if privacy_result['compliant'] else '🟥 Not Compliant'}")
-    st.markdown(f"**Required Phrases:** {' '.join([f'✔️ {p}' for p in privacy_result['present_required']]) if privacy_result['present_required'] else 'None'}")
-    st.markdown(f"**Missing Phrases:** {' '.join([f'❌ {p}' for p in privacy_result['missing_required']]) if privacy_result['missing_required'] else 'None'}")
-    if privacy_result["prohibited_phrases_found"]:
-        st.markdown(f"**Prohibited Phrases Found:** {' '.join([f'🟥 {p}' for p in privacy_result['prohibited_phrases_found']])}")
+    with col_optin:
+        st.markdown("#### ✅ Opt-in Feedback")
+        optin_result = check_opt_in_compliance(processed_optin_text)
+        
+        # Improved output formatting to handle empty lists gracefully
+        st.write(optin_result["message"])
+        st.markdown("**Required Phrases:**")
+        if optin_result['present_required']:
+            for p in optin_result['present_required']:
+                st.markdown(f"✔️ {p}")
+        if optin_result['missing_required']:
+            for p in optin_result['missing_required']:
+                st.markdown(f"❌ {p}")
+        if optin_result["prohibited_phrases_found"]:
+            st.markdown("**Prohibited Phrases Found:**")
+            for p in optin_result['prohibited_phrases_found']:
+                st.markdown(f"🟥 {p}")
+
+    with col_privacy:
+        st.markdown("#### 📄 Privacy Policy Feedback")
+        privacy_result = check_privacy_compliance(processed_privacy_text)
+        
+        # Improved output formatting to handle empty lists gracefully
+        st.markdown(f"**Compliance Status:** {'🟩 Compliant' if privacy_result['compliant'] else '🟥 Not Compliant'}")
+        st.markdown("**Required Phrases:**")
+        if privacy_result['present_required']:
+            for p in privacy_result['present_required']:
+                st.markdown(f"✔️ {p}")
+        if privacy_result['missing_required']:
+            for p in privacy_result['missing_required']:
+                st.markdown(f"❌ {p}")
+        if privacy_result["prohibited_phrases_found"]:
+            st.markdown("**Prohibited Phrases Found:**")
+            for p in privacy_result['prohibited_phrases_found']:
+                st.markdown(f"🟥 {p}")
 
     # --- Copy/Paste Summary ---
     st.markdown("---")
