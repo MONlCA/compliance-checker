@@ -1,38 +1,34 @@
 import re
 import requests
-from bs4 import BeautifulSoup
 from PIL import Image
 import pytesseract
 
+def extract_text_from_image(image_file):
+    image = Image.open(image_file)
+    return pytesseract.image_to_string(image)
 
-def contains_required_language(text: str, patterns: list) -> list:
-    matches = []
+def extract_text_from_url(url):
+    try:
+        response = requests.get(url, timeout=5)
+        if response.ok:
+            return response.text
+    except Exception as e:
+        return f"[Error fetching URL: {e}]"
+    return ""
+
+def contains_required_language(text: str, patterns: list) -> tuple:
+    found = []
+    missing = []
     for pattern in patterns:
         if re.search(pattern, text, re.IGNORECASE):
-            matches.append(pattern)
-    return matches
-
+            found.append(pattern)
+        else:
+            missing.append(pattern)
+    return found, missing
 
 def extract_noncompliant_phrases(text: str, blocked_patterns: list) -> list:
-    violations = []
+    found = []
     for pattern in blocked_patterns:
         if re.search(pattern, text, re.IGNORECASE):
-            violations.append(pattern)
-    return violations
-
-
-def extract_text_from_image(image_file) -> str:
-    try:
-        image = Image.open(image_file)
-        return pytesseract.image_to_string(image)
-    except Exception as e:
-        return f"OCR failed: {e}"
-
-
-def extract_text_from_url(url: str) -> str:
-    try:
-        response = requests.get(url, timeout=10)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        return soup.get_text(separator=' ', strip=True)
-    except Exception as e:
-        return f"Failed to fetch or parse URL: {e}"
+            found.append(pattern)
+    return found
