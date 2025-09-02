@@ -1,5 +1,10 @@
 import streamlit as st
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from compliance_logic import check_compliance
+
 from utils import get_examples, get_disclaimer
 
 st.set_page_config(page_title="A2P/TFV Compliance Assistance", layout="wide")
@@ -91,3 +96,4 @@ st.markdown(
     "</div>",
     unsafe_allow_html=True
 )
+from compliance_logic import check_opt_in_compliance, check_privacy_compliance
