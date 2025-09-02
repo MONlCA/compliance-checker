@@ -184,23 +184,21 @@ if st.button("✅ Check Compliance", key="check_button"):
         st.markdown("#### 📄 Privacy Policy Feedback")
         privacy_result = check_privacy_compliance(processed_privacy_text)
         
-        # New logic to handle empty opt-in and display errors line-by-line
+        # Corrected logic to only show checkmarks if compliant
         if not processed_privacy_text.strip():
             st.warning("⚠️ No privacy policy language provided.")
         else:
             st.markdown(f"**Compliance Status:** {'🟩 Compliant' if privacy_result['compliant'] else '🟥 Not Compliant'}")
             st.markdown("**Required Phrases:**")
             
-            # The corrected logic to only show checkmarks if compliant
+            # Updated logic to show a checkmark only if the policy is compliant
+            # This is to avoid showing a checkmark for a phrase when the overall policy is not compliant
             if privacy_result['compliant']:
                 for p in required_privacy_phrases:
                     st.markdown(f"✔️ {p}")
             else:
                 for p in required_privacy_phrases:
-                    if p in processed_privacy_text.lower():
-                        st.markdown(f"✔️ {p}")
-                    else:
-                        st.markdown(f"❌ {p}")
+                    st.markdown(f"❌ {p}")
             
             if privacy_result["prohibited_phrases_found"]:
                 st.markdown("**Non-Compliant Phrases Found:**")
