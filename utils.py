@@ -33,3 +33,32 @@ def format_feedback(header: str, items: list[str], icon: str = "❌") -> str:
     for item in items:
         message += f"- {icon} `{item}`\n"
     return message
+
+from PIL import Image
+import pytesseract
+import requests
+from bs4 import BeautifulSoup
+
+def extract_text_from_image(image_file):
+    """
+    Extract text from an uploaded image using Tesseract OCR.
+    """
+    image = Image.open(image_file)
+    return pytesseract.image_to_string(image)
+
+def extract_text_from_url(url):
+    """
+    Fetch and extract visible text from a given URL.
+    """
+    try:
+        response = requests.get(url, timeout=5)
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        # Remove script and style content
+        for element in soup(["script", "style"]):
+            element.extract()
+
+        return soup.get_text(separator=" ", strip=True)
+    except Exception as e:
+        return f"Error extracting text: {str(e)}"
+
