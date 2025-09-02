@@ -2,10 +2,8 @@ import streamlit as st
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-from compliance_logic import check_compliance
-
-from utils import get_examples, get_disclaimer
+from .compliance_logic import check_compliance
+from .utils import extract_text_from_image, extract_text_from_url
 
 st.set_page_config(page_title="A2P/TFV Compliance Assistance", layout="wide")
 
