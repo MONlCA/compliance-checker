@@ -1,50 +1,76 @@
-from utils import contains_required_language, extract_noncompliant_phrases
-
-# Acceptable language patterns
-opt_in_patterns = [
-    r"message\s+frequency\s+varies",
-    r"message\s+and\s+data\s+rates\s+may\s+apply",
-    r"reply\s+STOP\s+to\s+opt\s+out",
-    r"reply\s+HELP\s+for\s+help",
-    r"\bagree\s+to\s+receive\s+SMS",
-    r"by\s+providing\s+your\s+phone\s+number.*?(consent|agree)",
+required_optin_phrases = [
+    "consent to receive messages",
+    "message and data rates may apply",
+    "reply STOP to unsubscribe",
+    "reply HELP for help"
 ]
 
-privacy_policy_patterns = [
-    r"we\s+do\s+not\s+share.*?(third\s+parties|affiliates).*?marketing",
-    r"text\s+messaging\s+originator.*?will\s+not\s+be\s+shared",
-    r"subcontractors.*?(support|services|customer service)",
+prohibited_optin_phrases = [
+    "you will not receive any messages",
+    "we will not contact you"
 ]
 
-# Blocked / misleading phrases
-blocked_opt_in_phrases = [
-    r"free\s+SMS",
-    r"no\s+cost\s+messages",
-    r"we\s+may\s+share\s+your\s+number",
+required_privacy_phrases = [
+    "how information is collected",
+    "how information is used",
+    "how to opt-out",
+    "third parties",
+    "data security",
+    "contact information"
 ]
 
-blocked_privacy_phrases = [
-    r"we\s+may\s+share.*?with\s+partners",
-    r"your\s+information\s+may\s+be\s+sold",
-    r"may\s+disclose.*?without\s+notice",
+prohibited_privacy_phrases = [
+    "we sell your data",
+    "no responsibility",
+    "at your own risk"
 ]
 
-def check_opt_in_compliance(text: str) -> dict:
-    matches, missing = contains_required_language(text, opt_in_patterns)
-    violations = extract_noncompliant_phrases(text, blocked_opt_in_phrases)
+
+def check_opt_in_compliance(text: str):
+    if not text.strip():
+        return {
+            "compliant": False,
+            "message": "⚠️ No opt-in language provided.",
+            "present_required": [],
+            "missing_required": required_optin_phrases,
+            "prohibited_phrases_found": []
+        }
+
+    lower_text = text.lower()
+    present_required = [phrase for phrase in required_optin_phrases if phrase in lower_text]
+    prohibited_found = [phrase for phrase in prohibited_optin_phrases if phrase in lower_text]
+    missing_required = [phrase for phrase in required_optin_phrases if phrase not in lower_text]
+
+    compliant = len(missing_required) == 0 and len(prohibited_found) == 0
+
     return {
-        "compliant": len(matches) >= 4 and not violations,
-        "matches": matches,
-        "missing": missing,
-        "violations": violations
+        "compliant": compliant,
+        "message": "✅ Opt-in is compliant." if compliant else "❌ Opt-in is not compliant.",
+        "present_required": present_required,
+        "missing_required": missing_required,
+        "prohibited_phrases_found": prohibited_found
     }
 
-def check_privacy_compliance(text: str) -> dict:
-    matches, missing = contains_required_language(text, privacy_policy_patterns)
-    violations = extract_noncompliant_phrases(text, blocked_privacy_phrases)
+
+def check_privacy_compliance(text: str):
+    if not text.strip():
+        return {
+            "compliant": False,
+            "present_required": [],
+            "missing_required": required_privacy_phrases,
+            "prohibited_phrases_found": []
+        }
+
+    lower_text = text.lower()
+    present_required = [phrase for phrase in required_privacy_phrases if phrase in lower_text]
+    prohibited_found = [phrase for phrase in prohibited_privacy_phrases if phrase in lower_text]
+    missing_required = [phrase for phrase in required_privacy_phrases if phrase not in lower_text]
+
+    compliant = len(missing_required) == 0 and len(prohibited_found) == 0
+
     return {
-        "compliant": len(matches) >= 2 and not violations,
-        "matches": matches,
-        "missing": missing,
-        "violations": violations
+        "compliant": compliant,
+        "present_required": present_required,
+        "missing_required": missing_required,
+        "prohibited_phrases_found": prohibited_found
     }
