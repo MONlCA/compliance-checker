@@ -2,65 +2,72 @@ import streamlit as st
 from utils import extract_text_from_image, extract_text_from_url
 from compliance_logic import check_opt_in_compliance, check_privacy_compliance
 
-st.set_page_config(page_title="A2P/TFV Compliance Assistance", layout="wide")
+st.set_page_config(page_title="📲 A2P/TFV Compliance Assistance", layout="wide")
 
 st.markdown("## 📲 A2P/TFV Compliance Assistance")
+st.markdown("---")
 
-# Input Sections
-st.markdown("### Opt-in")
-optin_text = st.text_area("Paste Opt-in Language or Upload Image", height=100, label_visibility="collapsed")
+# Layout Columns
+optin_col, privacy_col = st.columns(2)
 
-optin_image = st.file_uploader("Or upload Opt-in Screenshot", type=["png", "jpg", "jpeg"], label_visibility="visible")
+with optin_col:
+    st.subheader("Opt-in")
+    optin_input = st.text_area("Paste Opt-in Language or Upload Image", height=150, label_visibility="collapsed")
+    optin_image = st.file_uploader("Or upload Opt-in Screenshot", type=["png", "jpg", "jpeg"])
 
-st.markdown("### Privacy Policy")
-privacy_text = st.text_area("Paste Privacy Policy Language or Upload Image / URL", height=100, label_visibility="collapsed")
+with privacy_col:
+    st.subheader("Privacy Policy")
+    privacy_input = st.text_area("Paste Privacy Policy Language or Upload Image / URL", height=150, label_visibility="collapsed")
+    privacy_image = st.file_uploader("Or upload Privacy Policy Screenshot", type=["png", "jpg", "jpeg"])
 
-privacy_image = st.file_uploader("Or upload Privacy Policy Screenshot", type=["png", "jpg", "jpeg"], label_visibility="visible")
-
-# Extract OCR text if images are uploaded
-if optin_image:
-    optin_text = extract_text_from_image(optin_image)
-
-if privacy_image:
-    privacy_text = extract_text_from_image(privacy_image)
-elif privacy_text.startswith("http"):
-    privacy_text = extract_text_from_url(privacy_text)
-
-# Button to trigger compliance check
 if st.button("✅ Check Compliance"):
-    st.markdown("### 🗂️ Compliance Results")
+    st.markdown("### 📋 Compliance Results")
+    with st.expander("✅ Opt-in Feedback", expanded=True):
+        if not optin_input and not optin_image:
+            st.warning("⚠️ No opt-in language provided.")
+        else:
+            optin_text = optin_input or extract_text_from_image(optin_image)
+            optin_result = check_opt_in_compliance(optin_text)
+            if optin_result["compliant"]:
+                st.success("✅ Opt-in is compliant.")
+            else:
+                st.error("❌ Opt-in is not compliant.")
+            st.markdown(f"- **Missing elements**: {optin_result['missing']}")
+            st.markdown(f"- **Prohibited phrases**: {optin_result['prohibited']}")
 
-    # --- Opt-in Check ---
-    st.markdown("#### ✅ Opt-in Feedback")
-    optin_result = check_opt_in_compliance(optin_text)
-    st.write(optin_result["message"])
+    with st.expander("📄 Privacy Policy Feedback", expanded=True):
+        if not privacy_input and not privacy_image:
+            st.warning("⚠️ No privacy policy provided.")
+        else:
+            privacy_text = privacy_input
+            if not privacy_input and privacy_image:
+                privacy_text = extract_text_from_image(privacy_image)
+            elif privacy_input.startswith("http"):
+                privacy_text = extract_text_from_url(privacy_input)
 
-    # --- Privacy Policy Check ---
-    st.markdown("#### 📄 Privacy Policy Feedback")
-    privacy_result = check_privacy_compliance(privacy_text)
-    st.write("**Compliance Status:**", "🟥 Not compliant" if not privacy_result["compliant"] else "🟩 Compliant")
-    st.write("**Detected Required Phrases:**", privacy_result["present_required"])
-    st.write("**Prohibited Phrases Found:**", privacy_result["prohibited_phrases_found"])
+            privacy_result = check_privacy_compliance(privacy_text)
 
-    # --- Copy/Paste Summary ---
-    st.markdown("#### 🧾 Copy/Paste for Customer")
-    with st.expander("📋 Click to Expand"):
-        st.code(f"""✅ Opt-in is {'' if optin_result['compliant'] else 'not '}compliant.
-- Required present: {optin_result['present_required']}
-- Prohibited phrases: {optin_result['prohibited_phrases_found']}
+            if privacy_result["compliant"]:
+                st.success("✅ Privacy policy is compliant.")
+            else:
+                st.error("❌ Privacy policy is not compliant.")
 
-✅ Privacy Policy is {'compliant.' if privacy_result['compliant'] else 'not compliant..'}
-- Required present: {privacy_result['present_required']}
-- Prohibited phrases: {privacy_result['prohibited_phrases_found']}
-        """, language="markdown")
+            st.markdown(f"**Missing Required Phrases:**\n```\n{privacy_result['missing']}\n```")
+            st.markdown(f"**Prohibited Phrases Found:**\n```\n{privacy_result['prohibited']}\n```")
 
-# Reference Section
+    with st.expander("📝 Copy/Paste for Customer"):
+        st.code(f"""✅ Opt-in is {'compliant' if optin_result['compliant'] else 'not compliant'}.
+- Missing elements: {optin_result['missing']}
+- Prohibited phrases: {optin_result['prohibited']}
+
+✅ Privacy Policy is {'compliant' if privacy_result['compliant'] else 'not compliant'}.
+- Missing elements: {privacy_result['missing']}
+- Prohibited phrases: {privacy_result['prohibited']}
+""")
+
 st.markdown("---")
 st.markdown("### 📚 Reference Documentation")
-st.markdown("- [A2P 10DLC Campaign Approval Requirements](https://support.twilio.com/hc/en-us/articles/1260805599530)")
-st.markdown("- [Required Information for Toll-Free Verification](https://support.twilio.com/hc/en-us/articles/10624736761299)")
-
-# Footer
-st.markdown("""<div style='text-align: center; color: gray; font-size: 0.8em;'>
-For Internal Use Only — Built By Monica Prasad — <a style='color: gray;' href='mailto:mprasad@twilio.com'>mprasad@twilio.com</a>
-</div>""", unsafe_allow_html=True)
+st.markdown("- [A2P 10DLC Campaign Approval Requirements](https://support.twilio.com/hc/en-us/articles/1260805599430)")
+st.markdown("- [Required Information for Toll-Free Verification](https://support.twilio.com/hc/en-us/articles/1260805413030)")
+st.markdown("---")
+st.markdown("For Internal Use Only — Built By Monica Prasad — [mprasad@twilio.com](mailto:mprasad@twilio.com)")
